@@ -21,24 +21,22 @@ jobs:
     plan:
       - get: spike-concurse-cf-deploy
         path: code
-      - try:
-          get: tfstate-s3
-          on_failure:
-            task: apply-tfstate-s3
-            config:
-              outputs:
-                - name: tfstate-s3
-              run:
-                path: bash
-                args:
-                - -c
-                - |
-                  WORKING_DIR=$(pwd)
-                  cd code/bosh/aws
-                  terraform apply -var env={{deploy_env}} -target=aws_s3_bucket.terraform_state && \
-                  cp terraform.tfstate ${WORKING_DIR}/tfstate-s3/
-      - put: tfstate-s3
-        params:
-          from: ./tfstate-s3/terraform.tfstate
+      - task: apply-tfstate-s3
+        config:
+          platform: linux
+          image: docker:///keymon/terraform
+          inputs:
+            - name: spike-concurse-cf-deploy
+          run:
+            path: sh
+            args:
+            - -c
+            - |
+              cd spike-concurse-cf-deploy/bosh/aws
+              terraform apply -var env={{deploy_env}} -target=aws_s3_bucket.terraform_state
+        on_success:
+          put: tfstate-s3
+          params:
+            from: ./tfstate-s3/terraform.tfstate
 
 
