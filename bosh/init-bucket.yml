@@ -1,0 +1,44 @@
+---
+resources:
+  - name: spike-concurse-cf-deploy
+    type: git
+    source:
+      uri: https://github.com/keymon/spike-concurse-cf-deploy
+      branch: master
+
+  - name: tfstate-s3
+    type: s3
+    source:
+      bucket: hectorc-tfstate
+      versioned_file: terraform.tfstate
+      region_name: eu-west-1
+      access_key_id: {{aws_access_key_id}}
+      secret_access_key: {{aws_secret_access_key}}
+
+jobs:
+
+  - name: init-tfstate-s3
+    plan:
+      - get: spike-concurse-cf-deploy
+        path: code
+      - try:
+          get: tfstate-s3
+          on_failure:
+            task: apply-tfstate-s3
+            config:
+              outputs:
+                - name: tfstate-s3
+              run:
+                path: bash
+                args:
+                - -c
+                - |
+                  WORKING_DIR=$(pwd)
+                  cd code/bosh/aws
+                  terraform apply -var env={{deploy_env}} -target=aws_s3_bucket.terraform_state && \
+                  cp terraform.tfstate ${WORKING_DIR}/tfstate-s3/
+      - put: tfstate-s3
+        params:
+          from: ./tfstate-s3/terraform.tfstate
+
+
