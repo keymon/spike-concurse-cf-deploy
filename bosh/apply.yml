@@ -9,7 +9,7 @@ resources:
   - name: tfstate-s3
     type: s3
     source:
-      bucket: hectorc-tfstate
+      bucket: {{bucket_name}}
       versioned_file: terraform.tfstate
       region_name: eu-west-1
       access_key_id: {{aws_access_key_id}}
@@ -32,9 +32,9 @@ jobs:
           run:
             path: sh
             args:
-            - -e
             - -c
             - |
+              set -e
               export AWS_ACCESS_KEY_ID={{aws_access_key_id}}
               export AWS_SECRET_ACCESS_KEY={{aws_secret_access_key}}
               export TF_VAR_AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}

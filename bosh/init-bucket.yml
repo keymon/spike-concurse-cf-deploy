@@ -9,7 +9,7 @@ resources:
   - name: tfstate-s3
     type: s3
     source:
-      bucket: hectorc-tfstate
+      bucket: {{bucket_name}}
       versioned_file: terraform.tfstate
       region_name: eu-west-1
       access_key_id: {{aws_access_key_id}}
