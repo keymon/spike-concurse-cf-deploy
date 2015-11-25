@@ -15,6 +15,15 @@ resources:
       access_key_id: {{aws_access_key_id}}
       secret_access_key: {{aws_secret_access_key}}
 
+  - name: id_rsa-s3
+    type: s3
+    source:
+      bucket: {{bucket_name}}
+      versioned_file: id_rsa.tgz
+      region_name: eu-west-1
+      access_key_id: {{aws_access_key_id}}
+      secret_access_key: {{aws_secret_access_key}}
+
 jobs:
 
   - name: terraform-apply
@@ -22,6 +31,7 @@ jobs:
       - get: spike-concurse-cf-deploy
         path: code
       - get: tfstate-s3
+      - get: id_rsa-s3
       - task: terraform-apply
         config:
           platform: linux
@@ -29,6 +39,7 @@ jobs:
           inputs:
             - name: spike-concurse-cf-deploy
             - name: tfstate-s3
+            - name: id_rsa-s3
           run:
             path: sh
             args:
@@ -39,8 +50,13 @@ jobs:
               export AWS_SECRET_ACCESS_KEY={{aws_secret_access_key}}
               export TF_VAR_AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
               export TF_VAR_AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+
               cp tfstate-s3/terraform.tfstate spike-concurse-cf-deploy/bosh/aws
+
               cd spike-concurse-cf-deploy/bosh/aws
+
+              mkdir ssh && tar -xvzf ../../../id_rsa-s3/id_rsa.tgz -C ./ssh
+
               terraform apply -var env={{deploy_env}}
         ensure:
           put: tfstate-s3
