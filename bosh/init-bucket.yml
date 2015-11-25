@@ -42,7 +42,7 @@ jobs:
           on_success:
             put: tfstate-s3
             params:
-              from: ./spike-concurse-cf-deploy/bosh/aws/terraform.tfstate
+              from: ./spike-concurse-cf-deploy/bosh/aws/terraform\.tfstate$
       # Just do one get once to check that the object is there
       - get: tfstate-s3
 
