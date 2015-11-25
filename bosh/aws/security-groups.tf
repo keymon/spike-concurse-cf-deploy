@@ -17,6 +17,13 @@ resource "aws_security_group" "jumpbox" {
     cidr_blocks = ["${split(",", var.office_cidrs)}", "${var.jenkins_elastic}"]
   }
 
+  ingress {
+    from_port = 80
+    to_port   = 80
+    protocol  = "tcp"
+    cidr_blocks = ["${split(",", var.office_cidrs)}", "${var.jenkins_elastic}"]
+  }
+
   tags {
     Name = "${var.env}-jumpbox"
   }
