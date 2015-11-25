@@ -15,6 +15,15 @@ resources:
       access_key_id: {{aws_access_key_id}}
       secret_access_key: {{aws_secret_access_key}}
 
+  - name: id_rsa-s3
+    type: s3
+    source:
+      bucket: {{bucket_name}}
+      versioned_file: id_rsa.tgz
+      region_name: eu-west-1
+      access_key_id: {{aws_access_key_id}}
+      secret_access_key: {{aws_secret_access_key}}
+
 jobs:
 
   - name: init-tfstate-s3
@@ -45,5 +54,26 @@ jobs:
               from: ./spike-concurse-cf-deploy/bosh/aws/terraform\.tfstate$
       # Just do one get once to check that the object is there
       - get: tfstate-s3
-
+      # Generate SSH key
+      - try:
+          get: id_rsa-s3
+          on_failure:
+            task: ssh-keygen
+            config:
+              platform: linux
+              image: docker:///ubuntu
+              outputs:
+                - name: id_rsa-s3
+              run:
+                path: sh
+                args:
+                - -c
+                - |
+                  set -e
+                  apt-get install openssh-client -y
+                  ssh-keygen -f id_rsa  -N '' && \
+                  tar -cvzf id_rsa-s3/id_rsa.tgz id_rsa id_rsa.pub
+      - put: id_rsa-s3
+        params:
+          from: ./id_rsa-s3/id_rsa.tgz
 
