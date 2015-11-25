@@ -8,9 +8,11 @@ fi
 DEPLOY_ENV=$1; shift
 PIPELINE_YML=$1; shift
 
-
+# Extract filename without extension
 PIPELINE_NAME=${PIPELINE_YML%%.yml}
 PIPELINE_NAME=${PIPELINE_NAME##*/}
+PIPELINE_NAME=${DEPLOY_ENV}-${PIPELINE_NAME}
+
 ./fly set-pipeline -c $PIPELINE_YML \
     --var "deploy_env=$DEPLOY_ENV" \
     --var "bucket_name=${DEPLOY_ENV}-tfstate" \
