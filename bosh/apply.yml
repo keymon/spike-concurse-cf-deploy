@@ -1,0 +1,50 @@
+---
+resources:
+  - name: spike-concurse-cf-deploy
+    type: git
+    source:
+      uri: https://github.com/keymon/spike-concurse-cf-deploy
+      branch: master
+
+  - name: tfstate-s3
+    type: s3
+    source:
+      bucket: hectorc-tfstate
+      versioned_file: terraform.tfstate
+      region_name: eu-west-1
+      access_key_id: {{aws_access_key_id}}
+      secret_access_key: {{aws_secret_access_key}}
+
+jobs:
+
+  - name: terraform-apply
+    plan:
+      - get: spike-concurse-cf-deploy
+        path: code
+      - get: tfstate-s3
+      - task: terraform-apply
+        config:
+          platform: linux
+          image: docker:///keymon/terraform
+          inputs:
+            - name: spike-concurse-cf-deploy
+            - name: tfstate-s3
+          run:
+            path: sh
+            args:
+            - -e
+            - -c
+            - |
+              export AWS_ACCESS_KEY_ID={{aws_access_key_id}}
+              export AWS_SECRET_ACCESS_KEY={{aws_secret_access_key}}
+              export TF_VAR_AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+              export TF_VAR_AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+              cp tfstate-s3/terraform.tfstate spike-concurse-cf-deploy/bosh/aws
+              cd spike-concurse-cf-deploy/bosh/aws
+              terraform apply -var env={{deploy_env}}
+        ensure:
+          put: tfstate-s3
+          params:
+            from: ./spike-concurse-cf-deploy/bosh/aws/terraform\.tfstate$
+      # Just do one get once to check that the object is there
+
