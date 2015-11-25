@@ -21,29 +21,26 @@ jobs:
     plan:
       - get: spike-concurse-cf-deploy
         path: code
-      - try:
-          get: tfstate-s3
-          on_failure:
-            task: apply-tfstate-s3
-            config:
-              platform: linux
-              image: docker:///keymon/terraform
-              inputs:
-                - name: spike-concurse-cf-deploy
-              run:
-                path: sh
-                args:
-                - -c
-                - |
-                  export AWS_ACCESS_KEY_ID={{aws_access_key_id}}
-                  export AWS_SECRET_ACCESS_KEY={{aws_secret_access_key}}
-                  export TF_VAR_AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                  export TF_VAR_AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                  cd spike-concurse-cf-deploy/bosh/aws
-                  terraform apply -var env={{deploy_env}} -target=aws_s3_bucket.terraform_state
-            on_success:
-              put: tfstate-s3
-              params:
-                from: ./spike-concurse-cf-deploy/bosh/aws/terraform.tfstate
+      - task: apply-tfstate-s3
+        config:
+          platform: linux
+          image: docker:///keymon/terraform
+          inputs:
+            - name: spike-concurse-cf-deploy
+          run:
+            path: sh
+            args:
+            - -c
+            - |
+              export AWS_ACCESS_KEY_ID={{aws_access_key_id}}
+              export AWS_SECRET_ACCESS_KEY={{aws_secret_access_key}}
+              export TF_VAR_AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+              export TF_VAR_AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+              cd spike-concurse-cf-deploy/bosh/aws
+              terraform apply -var env={{deploy_env}} -target=aws_s3_bucket.terraform_state
+        on_success:
+          put: tfstate-s3
+          params:
+            from: ./spike-concurse-cf-deploy/bosh/aws/terraform.tfstate
 
 
