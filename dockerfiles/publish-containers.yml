@@ -1,0 +1,24 @@
+jobs:
+  - name: job-publish
+    serial: true
+    plan:
+    - get: spike-concurse-cf-deploy
+    - put: terraform-docker-image
+      params:
+        build: spike-concurse-cf-deploy/dockerfiles/terraform
+
+
+resources:
+  - name: spike-concurse-cf-deploy
+    type: git
+    source:
+      uri: https://github.com/keymon/spike-concurse-cf-deploy
+      branch: master
+
+  - name: terraform-docker-image
+    type: docker-image
+    source:
+      email: {{docker_email}}
+      username: {{docker_user}}
+      password: {{docker_pass}}
+      repository: {{docker_repo_terraform}}
